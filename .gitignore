@@ -1,0 +1,12 @@
+# macOS clutter
+.DS_Store
+
+# Original full-size artwork (~68MB).
+# These stay on your Mac — they are the master copies you edit or re-export from.
+# The small, web-ready versions the site actually loads live in assets/thumbs/
+# and ARE committed. Keep a backup of this folder in Drive or Dropbox, because
+# it is deliberately not stored in GitHub.
+source-art/
+
+# Local editor/tool config, not part of the site
+.claude/

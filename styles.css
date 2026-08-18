@@ -1,0 +1,437 @@
+/* ==========================================================================
+   Matt's Portfolio — shared styles
+   Used by portfolio.html now, and index.html later.
+
+   How this file is organised:
+     1. Fonts
+     2. Colours + sizes (the "control panel" — change values here first)
+     3. Base / reset
+     4. Page layout
+     5. Top bar
+     6. Intro
+     7. Work sections
+     8. Footer
+     9. Small-screen adjustments
+   ========================================================================== */
+
+
+/* 1. FONTS -----------------------------------------------------------------
+   IBM Plex, stored in assets/fonts so the site doesn't depend on Google or
+   any other outside service. "swap" means text shows immediately in a backup
+   font and upgrades when Plex loads, so the page never looks blank.
+   -------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("assets/fonts/ibm-plex-sans-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("assets/fonts/ibm-plex-sans-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("assets/fonts/ibm-plex-mono-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("assets/fonts/ibm-plex-mono-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+/* 2. COLOURS + SIZES -------------------------------------------------------
+   Every colour on the page is named here and pulled from the Boston artwork.
+   Change a value here and it updates everywhere it's used.
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* Colours, sampled from the title-screen painting */
+  --navy-deep:   #0b1620;   /* page background — the harbour at night      */
+  --navy-panel:  #101f2c;   /* slightly lifted panels                      */
+  --cream:       #efe6d2;   /* main text — the sign lettering              */
+  --cream-dim:   #9dabb4;   /* secondary text                              */
+  --green:       #8bbf4d;   /* links + accents — the Play button green     */
+  --green-deep:  #5e8c31;
+  --brass:       #c9a227;   /* hairlines + section numbers — lamp brass    */
+  --rule:        rgba(201, 162, 39, 0.22);  /* faint brass divider line    */
+
+  /* Typefaces */
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Page width and rhythm */
+  --measure: 44rem;   /* how wide the text column gets on big screens */
+  --gap:     clamp(1.25rem, 4vw, 2rem);
+}
+
+
+/* 3. BASE / RESET ---------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Smooth scroll, unless the visitor has asked their system to reduce motion */
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background-color: var(--navy-deep);
+  color: var(--cream);
+  font-family: var(--font-sans);
+  font-size: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  margin: 0;
+  line-height: 1.2;
+  font-weight: 600;
+  text-wrap: balance;   /* stops one lonely word dangling on its own line */
+}
+
+p { margin: 0; }
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a { color: var(--green); }
+
+/* A clear, consistent focus ring for anyone navigating by keyboard */
+a:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Hidden until a keyboard user tabs to it, then it appears top-left */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  padding: 0.75rem 1rem;
+  background: var(--green-deep);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  text-decoration: none;
+  z-index: 10;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+
+/* 4. PAGE LAYOUT ----------------------------------------------------------- */
+
+.wrap {
+  width: 100%;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0 var(--gap) clamp(3rem, 8vw, 5rem);
+}
+
+
+/* 5. TOP BAR --------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(1.25rem, 4vw, 2rem) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.topbar__mark {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+}
+
+.topbar__game {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  color: var(--green);
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(139, 191, 77, 0.35);
+  border-radius: 3px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.topbar__game:hover {
+  background-color: rgba(139, 191, 77, 0.1);
+  border-color: var(--green);
+}
+
+
+/* 6. INTRO ----------------------------------------------------------------- */
+
+.intro {
+  padding: clamp(2rem, 5vw, 3rem) 0 clamp(2.5rem, 7vw, 4rem);
+}
+
+/* The pixel-art illustration of Matt and Uno */
+.intro__portrait {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid var(--rule);
+  margin-bottom: clamp(1.75rem, 5vw, 2.5rem);
+}
+
+.intro__name {
+  font-family: var(--font-mono);
+  font-size: clamp(1.75rem, 1.2rem + 2.6vw, 2.75rem);
+  letter-spacing: -0.02em;
+  margin-bottom: 1.25rem;
+}
+
+.intro__lede {
+  font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem);
+  line-height: 1.6;
+  color: var(--cream);
+  max-width: 34rem;
+}
+
+
+/* 7. WORK SECTIONS --------------------------------------------------------- */
+
+.work {
+  padding-top: clamp(2.5rem, 7vw, 4rem);
+}
+
+/* Section heading: a mono number, then the title, then a hairline
+   that runs out to the right edge of the column. */
+.work__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.875rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 1.25rem;
+}
+
+.work__num {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  color: var(--brass);
+  flex-shrink: 0;
+}
+
+.work__title {
+  font-size: clamp(1.25rem, 1.1rem + 0.7vw, 1.5rem);
+  letter-spacing: -0.01em;
+}
+
+.work__blurb {
+  color: var(--cream-dim);
+  margin-bottom: 2rem;
+  max-width: 36rem;
+}
+
+/* Individual pieces of work: plain rows divided by hairlines, rather than
+   floating cards. Reads more like an editorial index. */
+.item + .item {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Each row is: thumbnail on the left, text on the right.
+   On narrow screens this collapses to a single stacked column (see section 9). */
+.item {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  padding: 1.5rem 0;
+}
+
+/* --- Thumbnails ---------------------------------------------------------
+   The thumbnail is a second link to the same place, so a click on the image
+   works too. It's marked aria-hidden + tabindex="-1" so people using a
+   keyboard or screen reader don't have to tab past a duplicate of every link.
+   ------------------------------------------------------------------------ */
+.item__thumb {
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background-color: var(--navy-panel);
+}
+
+.item__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* fills the box, cropping rather than squashing */
+  transition: transform 0.35s ease;
+}
+
+/* Slight zoom when the row is hovered — the only motion on the page */
+.item:hover .item__thumb img {
+  transform: scale(1.04);
+}
+
+/* For logos: show the whole thing on white instead of cropping it */
+.item__thumb--contain {
+  background-color: #fff;
+}
+
+.item__thumb--contain img {
+  object-fit: contain;
+  padding: 0.625rem;
+}
+
+.item__client {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  margin-bottom: 0.5rem;
+}
+
+.item__title {
+  font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.1875rem);
+  line-height: 1.35;
+  margin-bottom: 0.5rem;
+}
+
+.item__title a {
+  color: var(--cream);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.item__title a:hover {
+  color: var(--green);
+  text-decoration: underline;
+  text-decoration-color: var(--green);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+/* The little ↗ that marks a link as opening elsewhere */
+.item__arrow {
+  display: inline-block;
+  margin-left: 0.4em;
+  color: var(--brass);
+  font-size: 0.85em;
+  transform: translateY(-0.05em);
+}
+
+.item__desc {
+  color: var(--cream-dim);
+  font-size: 0.9375rem;
+  max-width: 36rem;
+}
+
+
+/* 8. FOOTER ---------------------------------------------------------------- */
+
+.foot {
+  margin-top: clamp(3.5rem, 9vw, 5rem);
+  padding-top: 2rem;
+  border-top: 1px solid var(--rule);
+}
+
+.foot__game {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  text-decoration: none;
+  color: var(--green);
+  padding: 0.625rem 1.125rem;
+  border: 1px solid rgba(139, 191, 77, 0.35);
+  border-radius: 3px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.foot__game:hover {
+  background-color: rgba(139, 191, 77, 0.1);
+  border-color: var(--green);
+}
+
+.foot__credit {
+  margin-top: 1.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  color: rgba(157, 171, 180, 0.65);
+}
+
+
+/* 9. SMALL SCREENS --------------------------------------------------------- */
+
+/* Below this width the side-by-side thumbnail gets too cramped, so the
+   image moves above the text and runs the full width of the column. */
+@media (max-width: 34rem) {
+  .item {
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+  }
+}
+
+@media (max-width: 30rem) {
+
+  /* Stack the section number above the title so long titles don't get squeezed */
+  .work__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+  }
+
+  .topbar__mark {
+    /* The "Portfolio" label is decorative — drop it when space is tight */
+    display: none;
+  }
+
+  .topbar {
+    justify-content: flex-end;
+  }
+}
