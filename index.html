@@ -47,5 +47,41 @@
     </div>
   </main>
 
+  <!-- ===== The game. Hidden until "Play the game" is pressed. ===== -->
+  <div class="game" id="game" hidden>
+    <!-- The wrapper holds the shape. Kaplay writes width/height straight onto
+         the canvas, so the canvas can't be the thing that defines the box. -->
+    <div class="game__stage">
+      <canvas id="game-canvas"></canvas>
+    </div>
+
+    <!-- A d-pad cross: jump on top, walk left and right either side, and the
+         interact button in the middle. Interact stays dimmed until Uno is
+         standing at a stop (Phase E gives it a job). -->
+    <div class="game__controls dpad">
+      <button class="gbtn dpad__up"      id="btn-jump"     type="button" aria-label="Jump">▲</button>
+      <button class="gbtn dpad__left"    id="btn-left"     type="button" aria-label="Walk left">◀</button>
+      <button class="gbtn gbtn--action"  id="btn-interact" type="button" aria-label="Interact" disabled>●</button>
+      <button class="gbtn dpad__right"   id="btn-right"    type="button" aria-label="Walk right">▶</button>
+    </div>
+
+    <p class="game__hint">◀ ▶ or A / D to walk · ▲ or Space to jump</p>
+  </div>
+
+  <script type="module">
+    import { startGame } from "./game.js";
+
+    const playButton = document.getElementById("play-button");
+    const titleScreen = document.querySelector(".title");
+    const gameScreen = document.getElementById("game");
+
+    playButton.addEventListener("click", () => {
+      titleScreen.hidden = true;
+      gameScreen.hidden = false;
+      document.body.classList.add("is-playing");
+      startGame();
+    }, { once: true });   // the game only ever starts once per page load
+  </script>
+
 </body>
 </html>

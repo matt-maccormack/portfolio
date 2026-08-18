@@ -83,7 +83,8 @@ Intro copy \+ two buttons \+ credit line (Section 6). This is mostly a static sc
 
 Using **colored rectangles, no art**:
 
-- A short, flat, single level. Walk right only. No jumping, no vertical movement, no enemies.  
+- A short, flat, single level. Walk left and right. No enemies.  
+- Uno can jump (up arrow / W / space, or the ▲ button). Added 18 Aug 2026 — see the amendment note at the bottom of this file.  
 - Uno stays roughly centered; the world scrolls past him.  
 - Keyboard controls (arrow keys / A-D) **and** on-screen click buttons (◀ ▶ and an interact button).  
 - Get the *feel* right — smooth movement, sensible scroll speed — before any art exists. **Do not add art in this phase.** We lock the mechanics first.
@@ -92,8 +93,10 @@ Using **colored rectangles, no art**:
 
 - Three stops at fixed positions along the level (Section 5).  
 - When Uno reaches a stop, he stops/sits and an interact prompt appears.  
+- **The modal opens automatically the first time Uno reaches each stop** (amended 18 Aug 2026). Recruiters are not gamers, and the whole point of the game is that they see the work — a discretionary button press is where people fall off. On any later visit to the same stop it does not auto-open; the prompt appears and interact re-opens it.  
 - Pressing interact (keyboard or button) opens a simple modal for that stop.  
-- Each modal has a headline, a line of copy, and a link that opens the real work **in a new tab**.
+- Each modal has a headline, a line of copy, and a link that opens the real work **in a new tab**.  
+- A small "stops visited 0/3" indicator, so visitors know how many there are.
 
 ### Phase F — Bones (charm only)
 
@@ -105,6 +108,7 @@ Using **colored rectangles, no art**:
 
 - After the third stop, Uno reaches the end and sits.  
 - Show: "Thanks for playing\!", optionally the bones count, and a button **"View Matt's full portfolio →"** linking to `/portfolio`.  
+- **Also list all three pieces of work with their links** (amended 18 Aug 2026). This is the safety net: nobody reaches the end without the work having been put in front of them at least once.  
 - No contact section anywhere.
 
 ### Phase H — Art swap
@@ -219,7 +223,7 @@ If real art isn't ready when we reach Phase H, that's fine — the placeholder v
 
 ## 9\. Explicit non-goals — do NOT build these
 
-- No jumping, gravity, or platforming physics.  
+- ~~No jumping, gravity, or platforming physics.~~ **Amended 18 Aug 2026:** Uno can jump, so that some bones can sit above head height. Simple gravity only — still no platforms, no falling, and nothing to land on but the ground.  
 - No enemies, hazards, health, score-based win/lose, or levels.  
 - No mobile game controls (route mobile users to the portfolio instead).  
 - No accounts, login, database, backend, API, or CMS.  
@@ -240,3 +244,24 @@ If real art isn't ready when we reach Phase H, that's fine — the placeholder v
 - Prefer the simple, boring, reliable solution every time.  
 - Do NOT re-write any text that I suggest without first asking. I don’t want em dashes and a bunch of “Claudeisms” in my writing.
 
+
+---
+
+## 11. Amendments
+
+Changes made to this plan after the build started. Newest first.
+
+**18 Aug 2026 — Stops auto-open, and the ending screen repeats the work.**
+Phase E originally required the visitor to press interact at each stop. Changed
+so the modal opens by itself the first time Uno reaches a stop, because the
+audience is recruiters rather than gamers and an optional button press is where
+people drop off. Re-visiting a stop does not auto-open it. Phase G additionally
+lists all three pieces of work, so nobody can finish without having seen them.
+
+**18 Aug 2026 — Uno can jump.**
+Section 9 originally ruled out jumping, gravity, and platforming physics.
+Amended so that bones can be placed above head height and be worth reaching
+for. What this covers: a single jump from the ground, with gravity pulling
+him back down. What it deliberately still excludes: platforms to land on,
+falling or pits, double-jumping, and any way to fail. Bones stay purely
+cosmetic per Phase F — a missed bone costs nothing.

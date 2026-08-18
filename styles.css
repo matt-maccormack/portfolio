@@ -107,6 +107,12 @@
   box-sizing: border-box;
 }
 
+/* The browser hides [hidden] elements with display:none, but any display
+   value we set later would silently override it. This keeps hidden hidden. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   /* Smooth scroll, unless the visitor has asked their system to reduce motion */
   scroll-behavior: smooth;
@@ -642,4 +648,121 @@ a:focus-visible {
   .title-body { overflow: auto; }
   .title { min-height: 100svh; align-items: flex-start; }
   .title__panel { margin: auto 0; }
+}
+
+
+/* ==========================================================================
+   GAME SCREEN (index.html, after pressing Play)
+   Phase D: the canvas plus on-screen controls. Placeholder art only.
+   ========================================================================== */
+
+/* While playing, nothing on the page should scroll */
+body.is-playing {
+  overflow: hidden;
+  background-color: #0a1017;
+}
+
+.game {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #0a1017;
+}
+
+/* The wrapper defines the 16:9 box. It has to be a separate element because
+   Kaplay writes width/height directly onto the canvas as inline styles,
+   which would override anything set here. */
+.game__stage {
+  width: min(100%, 1152px);
+  aspect-ratio: 16 / 9;
+  max-height: 78vh;
+  border-radius: 4px;
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  overflow: hidden;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Keep pixel edges sharp rather than blurred when scaled */
+  image-rendering: pixelated;
+}
+
+/* A cross:      ▲
+              ◀  ●  ▶
+   Three columns wide, two rows tall. Jump sits in the top middle, directly
+   above the interact button, with the two walk buttons either side. */
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 3.5rem);
+  grid-template-rows: repeat(2, 3rem);
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.dpad__up       { grid-column: 2; grid-row: 1; }
+.dpad__left     { grid-column: 1; grid-row: 2; }
+.gbtn--action   { grid-column: 2; grid-row: 2; }
+.dpad__right    { grid-column: 3; grid-row: 2; }
+
+.gbtn {
+  width: 3.5rem;
+  height: 3rem;
+  font-family: var(--font-pixel);
+  font-size: 1rem;
+  color: var(--cream);
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(239, 230, 210, 0.28);
+  border-radius: 5px;
+  cursor: pointer;
+  /* Stops a long-press from selecting text or firing the phone's zoom */
+  touch-action: none;
+  user-select: none;
+  transition: background-color 0.12s ease;
+}
+
+.gbtn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.gbtn:active {
+  background-color: rgba(139, 191, 77, 0.28);
+  border-color: var(--green);
+}
+
+.gbtn:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}
+
+/* The interact button. Round, to read as a different kind of control.
+   Sized to sit inside its grid cell rather than overflow the row. */
+.gbtn--action {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  justify-self: center;
+}
+
+/* Dimmed and unclickable until Uno is actually at a stop */
+.gbtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.gbtn:disabled:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.game__hint {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: rgba(157, 171, 180, 0.65);
 }
