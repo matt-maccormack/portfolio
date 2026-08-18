@@ -968,3 +968,21 @@ body.is-playing {
 @media (prefers-reduced-motion: reduce) {
   .hud__item--pop { animation: none; }
 }
+
+
+/* --- Small screens (Phase I) ----------------------------------------------
+   The game is desktop-only by design. Phones keep the title screen and its
+   artwork, but the Play button is replaced by a short note and the portfolio
+   becomes the main action.
+   -------------------------------------------------------------------------- */
+
+.title__small-screen {
+  margin-top: 1.5rem;
+  padding: 0.875rem 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--cream-dim);
+  background-color: rgba(255, 255, 255, 0.04);
+  border-left: 2px solid var(--brass);
+  border-radius: 0 4px 4px 0;
+}

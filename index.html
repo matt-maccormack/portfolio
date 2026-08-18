@@ -31,13 +31,18 @@
       <p class="title__copy">Hi, I’m Matt. I’m a marketer focused on product storytelling, creative campaigns, and making complex technology interesting.</p>
       <p class="title__copy">I built this little Boston adventure as a different way to explore some of my work.</p>
 
+      <!-- Shown instead of the Play button on small screens. The game is a
+           desktop experience by design, so phones go straight to the work. -->
+      <p class="title__small-screen" id="small-screen-note" hidden>
+        The game needs a keyboard and a bigger screen — but everything Uno
+        walks past is on the portfolio.
+      </p>
+
       <div class="title__actions">
-        <!-- Does nothing yet on purpose. Phase D wires this up to start the
-             game on this same page; there is no separate game page. -->
         <button class="btn btn--primary" type="button" id="play-button">
           <span aria-hidden="true">▶</span> Play the game
         </button>
-        <a class="btn btn--secondary" href="portfolio.html">
+        <a class="btn btn--secondary" id="portfolio-button" href="portfolio.html">
           Just show me the portfolio <span aria-hidden="true">→</span>
         </a>
       </div>
@@ -103,15 +108,31 @@
     import { startGame } from "./game.js";
 
     const playButton = document.getElementById("play-button");
+    const portfolioButton = document.getElementById("portfolio-button");
+    const smallScreenNote = document.getElementById("small-screen-note");
     const titleScreen = document.querySelector(".title");
     const gameScreen = document.getElementById("game");
 
-    playButton.addEventListener("click", () => {
-      titleScreen.hidden = true;
-      gameScreen.hidden = false;
-      document.body.classList.add("is-playing");
-      startGame();
-    }, { once: true });   // the game only ever starts once per page load
+    // The game needs a keyboard and room to see the street, so small screens
+    // get a short note and the portfolio instead. Checked once on load rather
+    // than live, so nothing changes underneath someone mid-play.
+    const isSmallScreen = window.matchMedia("(max-width: 820px)").matches;
+
+    if (isSmallScreen) {
+      playButton.hidden = true;
+      smallScreenNote.hidden = false;
+      // With no game to play, the portfolio becomes the main action
+      portfolioButton.classList.remove("btn--secondary");
+      portfolioButton.classList.add("btn--primary");
+      portfolioButton.textContent = "View the portfolio →";
+    } else {
+      playButton.addEventListener("click", () => {
+        titleScreen.hidden = true;
+        gameScreen.hidden = false;
+        document.body.classList.add("is-playing");
+        startGame();
+      }, { once: true });   // the game only ever starts once per page load
+    }
   </script>
 
 </body>
