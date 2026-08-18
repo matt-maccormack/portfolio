@@ -766,3 +766,91 @@ body.is-playing {
   letter-spacing: 0.04em;
   color: rgba(157, 171, 180, 0.65);
 }
+
+
+/* --- Stop counter + modal (Phase E) --------------------------------------- */
+
+.game__counter {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--brass);
+}
+
+/* Sits over the whole game, dimming it so the card is clearly the thing
+   to read. Clicking the dim area closes it. */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: rgba(4, 10, 16, 0.78);
+}
+
+.modal__card {
+  width: min(30rem, 100%);
+  padding: clamp(1.5rem, 4vw, 2rem);
+  background-color: rgba(8, 17, 26, 0.98);
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+.modal__heading {
+  font-family: var(--font-pixel);
+  font-size: clamp(0.875rem, 0.8rem + 0.5vw, 1.125rem);
+  line-height: 1.4;
+  color: var(--green);
+  margin-bottom: 1rem;
+}
+
+.modal__copy {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--cream);
+  margin-bottom: 1.5rem;
+}
+
+/* The point of the whole game — styled to be the obvious next action */
+.modal__link {
+  display: block;
+  padding: 0.875rem 1.25rem;
+  font-family: var(--font-pixel);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-decoration: none;
+  color: #fff;
+  background-color: var(--green-deep);
+  border: 1px solid #7fb03f;
+  border-bottom-width: 3px;
+  border-radius: 5px;
+}
+
+.modal__link:hover {
+  background-color: #6b9e38;
+}
+
+.modal__close {
+  margin-top: 0.875rem;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--cream-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.modal__close:hover { color: var(--cream); }
+
+.modal__link:focus-visible,
+.modal__close:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}

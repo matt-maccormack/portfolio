@@ -69,11 +69,37 @@ const SIZE = {
 
 const LEVEL_END = 4200;
 
-const LANDMARKS = [
-  { x:  900, label: "1" },
-  { x: 2200, label: "2" },
-  { x: 3500, label: "3" },
+/* The three stops. Copy is taken verbatim from Section 5 of PLAN.md.
+   Uno halts at each one; the first arrival opens the modal by itself. */
+const STOPS = [
+  {
+    x: 900,
+    label: "1",
+    heading: "PRODUCT LAUNCHES",
+    copy: "I turn product releases into stories people actually want to engage with.",
+    linkText: "View Ask Galileo launch →",
+    url: "https://www.linkedin.com/posts/matthew-arbesfeld-04b5429b_today-im-excited-to-announce-ask-galileo-activity-7435346977799770113-F3EY",
+  },
+  {
+    x: 2200,
+    label: "2",
+    heading: "CUSTOMER STORYTELLING",
+    copy: "I turn real customer experiences into credible proof of product value.",
+    linkText: "View customer story →",
+    url: "https://www.youtube.com/watch?v=RrlLZU-h32s",
+  },
+  {
+    x: 3500,
+    label: "3",
+    heading: "THOUGHT LEADERSHIP",
+    copy: "I work with technical leaders to turn complex ideas into clear, compelling narratives.",
+    linkText: "View self-improving software article →",
+    url: "https://blog.logrocket.com/introducing-self-improving-software/",
+  },
 ];
+
+// How close Uno has to get before a stop triggers
+const STOP_RADIUS = 55;
 
 // Scenery blocks, purely so movement is readable. Not interactive.
 const SCENERY = [
@@ -90,7 +116,43 @@ const SCENERY = [
    so the game never needs to care which one the player used.
    -------------------------------------------------------------------------- */
 
-const input = { left: false, right: false, jump: false };
+const input = { left: false, right: false, jump: false, interact: false };
+
+// Keyboard state is tracked here rather than read from Kaplay, so that it can
+// be force-cleared. Without that, a key held down at the moment the modal
+// opens never receives its "released" event and stays stuck on forever.
+const keys = { left: false, right: false };
+
+function clearHeldInput() {
+  keys.left = keys.right = false;
+  input.left = input.right = false;
+  input.jump = input.interact = false;
+}
+
+function wireKeyboard() {
+  window.addEventListener("keydown", (e) => {
+    if (modal.isOpen || e.repeat) return;   // the modal has its own keys
+    switch (e.key) {
+      case "ArrowLeft":  case "a": case "A": keys.left = true;  break;
+      case "ArrowRight": case "d": case "D": keys.right = true; break;
+      case "ArrowUp":    case "w": case "W": case " ":
+        input.jump = true;
+        e.preventDefault();   // stop the spacebar scrolling the page
+        break;
+      case "e": case "E": case "Enter": input.interact = true; break;
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    switch (e.key) {
+      case "ArrowLeft":  case "a": case "A": keys.left = false;  break;
+      case "ArrowRight": case "d": case "D": keys.right = false; break;
+    }
+  });
+
+  // Switching windows mid-press also swallows the "released" event
+  window.addEventListener("blur", clearHeldInput);
+}
 
 function wireOnScreenButtons() {
   const bind = (id, key) => {
@@ -113,9 +175,71 @@ function wireOnScreenButtons() {
     jump.addEventListener("pointerdown", (e) => { e.preventDefault(); input.jump = true; });
   }
 
-  // Phase E gives this a job: opening the modal for a stop.
+  // Re-opens the stop Uno is standing at. One-shot, like jump.
   const interact = document.getElementById("btn-interact");
-  if (interact) interact.addEventListener("click", () => {});
+  if (interact) {
+    interact.addEventListener("click", () => { input.interact = true; });
+  }
+}
+
+
+/* 4b. THE STOP MODAL -------------------------------------------------------
+   Plain HTML rather than drawn into the canvas, so the link is a real link,
+   the text can be selected, and screen readers can read it.
+   -------------------------------------------------------------------------- */
+
+const modal = {
+  root:    null,
+  heading: null,
+  copy:    null,
+  link:    null,
+  isOpen:  false,
+  lastFocus: null,
+};
+
+function initModal() {
+  modal.root    = document.getElementById("stop-modal");
+  modal.heading = document.getElementById("stop-heading");
+  modal.copy    = document.getElementById("stop-copy");
+  modal.link    = document.getElementById("stop-link");
+
+  document.getElementById("stop-close").addEventListener("click", closeModal);
+
+  // Clicking the dimmed background closes it, but clicking the card doesn't
+  modal.root.addEventListener("click", (e) => {
+    if (e.target === modal.root) closeModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.isOpen) closeModal();
+  });
+}
+
+function openModal(stop) {
+  // Whatever was being held when this opened will never report being let go,
+  // because the card now covers the buttons and takes keyboard focus.
+  clearHeldInput();
+  modal.lastFocus = document.activeElement;
+  modal.heading.textContent = stop.heading;
+  modal.copy.textContent    = stop.copy;
+  modal.link.textContent    = stop.linkText;
+  modal.link.href           = stop.url;
+  modal.root.hidden = false;
+  modal.isOpen = true;
+  // Send focus into the dialog so keyboard and screen-reader users land here
+  document.getElementById("stop-close").focus();
+}
+
+function closeModal() {
+  modal.root.hidden = true;
+  modal.isOpen = false;
+  clearHeldInput();   // start walking again from a clean slate
+  if (modal.lastFocus) modal.lastFocus.focus();
+}
+
+function updateStopCounter(visited, total) {
+  const el = document.getElementById("stop-counter");
+  if (el) el.textContent = `Stops visited ${visited}/${total}`;
 }
 
 
@@ -178,22 +302,33 @@ export function startGame() {
     ]);
   }
 
-  // --- Landmarks: placeholders for the three stops (Phase E) ---
-  for (const m of LANDMARKS) {
+  // --- The three stops (placeholder pillars until Phase H) ---
+  for (const stop of STOPS) {
     k.add([
       k.rect(14, 110),
-      k.pos(m.x, SIZE.groundY - 110),
+      k.pos(stop.x, SIZE.groundY - 110),
       k.color(...LOOK.landmark),
       k.z(4),
     ]);
     k.add([
-      k.text(m.label, { size: 18 }),
-      k.pos(m.x + 7, SIZE.groundY - 132),
+      k.text(stop.label, { size: 18 }),
+      k.pos(stop.x + 7, SIZE.groundY - 132),
       k.anchor("center"),
       k.color(...LOOK.landmark),
       k.z(4),
     ]);
   }
+
+  // Floating "press to look" prompt. Follows Uno, shown only at a stop
+  // he has already opened once.
+  const prompt = k.add([
+    k.text("● to look again", { size: 12 }),
+    k.pos(0, 0),
+    k.anchor("center"),
+    k.color(...LOOK.uno),
+    k.opacity(0),
+    k.z(7),
+  ]);
 
   // --- Uno ---
   const uno = k.add([
@@ -222,11 +357,50 @@ export function startGame() {
   let velY = 0;
   let onGround = true;
 
+  // Stop tracking
+  const visited = new Set();
+  let currentStop = null;      // the stop Uno is standing at, if any
+  const interactBtn = document.getElementById("btn-interact");
+
+  updateStopCounter(0, STOPS.length);
+
   k.onUpdate(() => {
     const dt = k.dt();
 
-    const goLeft  = input.left  || k.isKeyDown("left")  || k.isKeyDown("a");
-    const goRight = input.right || k.isKeyDown("right") || k.isKeyDown("d");
+    // --- Which stop, if any, is Uno standing at? ---
+    const unoCentre = uno.pos.x + SIZE.unoW / 2;
+    currentStop = STOPS.find(s => Math.abs(unoCentre - s.x) < STOP_RADIUS) || null;
+
+    // First arrival opens the modal on its own. This is the whole point:
+    // a visitor should never have to know to press anything to see the work.
+    if (currentStop && !visited.has(currentStop) && !modal.isOpen) {
+      visited.add(currentStop);
+      updateStopCounter(visited.size, STOPS.length);
+      openModal(currentStop);
+    }
+
+    // The interact button only works where there's something to interact with
+    if (interactBtn) interactBtn.disabled = !currentStop;
+
+    // Re-opening a stop already seen
+    const wantsInteract = input.interact;
+    input.interact = false;
+    if (wantsInteract && currentStop && !modal.isOpen) openModal(currentStop);
+
+    // The prompt hints at the button, but only once it has a job to do
+    prompt.pos.x = uno.pos.x + SIZE.unoW / 2;
+    prompt.pos.y = uno.pos.y - 18;
+    prompt.opacity = (currentStop && !modal.isOpen) ? 0.85 : 0;
+
+    // While the modal is up, Uno stands still — otherwise he wanders off
+    // behind it while the visitor is reading.
+    if (modal.isOpen) {
+      walkTime = 0;
+      return;
+    }
+
+    const goLeft  = input.left  || keys.left;
+    const goRight = input.right || keys.right;
     const dir = (goRight ? 1 : 0) - (goLeft ? 1 : 0);
 
     // Move, then clamp to the level so you can't walk off either end
@@ -241,10 +415,7 @@ export function startGame() {
 
     // --- Jump ---
     // Only launches from the ground, so holding the key can't fly.
-    const wantsJump = input.jump
-      || k.isKeyPressed("up")
-      || k.isKeyPressed("w")
-      || k.isKeyPressed("space");
+    const wantsJump = input.jump;
     input.jump = false;   // one-shot: consumed whether or not it was used
 
     if (wantsJump && onGround) {
@@ -285,6 +456,8 @@ export function startGame() {
     mid.pos.x = (camX - half) * (1 - FEEL.parallaxMid) - SIZE.viewW;
   });
 
+  initModal();
+  wireKeyboard();
   wireOnScreenButtons();
 
   // Add ?debug to the URL to read the walk position from the browser console.
