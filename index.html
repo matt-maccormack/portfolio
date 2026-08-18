@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matt’s Portfolio: The Game</title>
+  <meta name="description" content="A little pixel-art Boston adventure through Matt MacCormack’s marketing work.">
+
+  <link rel="stylesheet" href="styles.css">
+
+  <link rel="preload" href="assets/fonts/silkscreen-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/title-bg.jpg" as="image">
+</head>
+<body class="title-body">
+
+  <main class="title">
+
+    <!-- The artwork sits behind everything. It's decorative here: the panel
+         carries all the real content, so screen readers can skip the image. -->
+    <img class="title__bg" src="assets/title-bg.jpg" alt="" aria-hidden="true">
+
+    <div class="title__panel">
+
+      <h1 class="title__heading">
+        <span class="title__line1">Matt’s Portfolio:</span>
+        <span class="title__line2">The Game</span>
+      </h1>
+
+      <div class="title__rule" aria-hidden="true"></div>
+
+      <p class="title__copy">Hi, I’m Matt. I’m a marketer focused on product storytelling, creative campaigns, and making complex technology interesting.</p>
+      <p class="title__copy">I built this little Boston adventure as a different way to explore some of my work.</p>
+
+      <div class="title__actions">
+        <!-- Does nothing yet on purpose. Phase D wires this up to start the
+             game on this same page; there is no separate game page. -->
+        <button class="btn btn--primary" type="button" id="play-button">
+          <span aria-hidden="true">▶</span> Play the game
+        </button>
+        <a class="btn btn--secondary" href="portfolio.html">
+          Just show me the portfolio <span aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      <p class="title__credit">Built with Claude Code · ChatGPT · GitHub · Vercel</p>
+
+    </div>
+  </main>
+
+</body>
+</html>
