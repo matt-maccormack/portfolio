@@ -78,6 +78,21 @@
         <button class="modal__close" id="stop-close" type="button">Keep walking</button>
       </div>
     </div>
+
+    <!-- The end of the walk. Repeats all three pieces of work so nobody
+         finishes without having seen them, then hands off to the portfolio. -->
+    <div class="modal ending" id="ending" role="dialog" aria-modal="true" aria-labelledby="ending-heading" hidden>
+      <div class="modal__card ending__card">
+        <p class="modal__heading" id="ending-heading">Thanks for playing!</p>
+        <p class="ending__bones" id="ending-bones" hidden></p>
+
+        <p class="ending__intro">Everything Uno walked past, in one place:</p>
+        <ul class="ending__list" id="ending-list"></ul>
+
+        <a class="modal__link" id="ending-portfolio" href="portfolio.html">View Matt’s full portfolio →</a>
+        <button class="modal__close" id="ending-dismiss" type="button">Keep exploring</button>
+      </div>
+    </div>
   </div>
 
   <script type="module">

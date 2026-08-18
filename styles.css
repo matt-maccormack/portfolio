@@ -854,3 +854,72 @@ body.is-playing {
   outline: 2px solid var(--brass);
   outline-offset: 3px;
 }
+
+
+/* --- Ending screen (Phase G) ---------------------------------------------- */
+
+.ending__card {
+  width: min(34rem, 100%);
+  text-align: left;
+}
+
+.ending__card .modal__heading {
+  text-align: center;
+}
+
+.ending__bones {
+  margin-bottom: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--brass);
+  text-align: center;
+}
+
+.ending__intro {
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+  color: var(--cream-dim);
+  text-align: center;
+}
+
+.ending__list {
+  margin-bottom: 1.75rem;
+}
+
+.ending__item {
+  padding: 0.875rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ending__item:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* The section name, small and quiet above its link */
+.ending__label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--cream-dim);
+}
+
+.ending__link {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--cream);
+  text-decoration: none;
+}
+
+.ending__link:hover {
+  color: var(--green);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.ending__link:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}

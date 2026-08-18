@@ -59,6 +59,7 @@ const SIZE = {
   groundY:    430,   // top edge of the ground
   unoW:       38,
   unoH:       44,
+  unoSitH:    34,   // squashed a little when he sits at the end
 };
 
 
@@ -100,6 +101,10 @@ const STOPS = [
 
 // How close Uno has to get before a stop triggers
 const STOP_RADIUS = 55;
+
+// Walk past this and the ending screen appears. Sits just short of the wall
+// so Uno comes to rest rather than jamming against the edge.
+const ENDING_X = LEVEL_END - 60;
 
 // Scenery blocks, purely so movement is readable. Not interactive.
 const SCENERY = [
@@ -243,6 +248,62 @@ function updateStopCounter(visited, total) {
 }
 
 
+/* 4c. THE ENDING SCREEN ----------------------------------------------------
+   Shown when Uno reaches the end of the walk. Repeats all three pieces of
+   work, so nobody can finish the game without the work having been put in
+   front of them, then hands off to the full portfolio.
+   -------------------------------------------------------------------------- */
+
+const ending = { root: null, isOpen: false, lastFocus: null };
+
+function initEnding() {
+  ending.root = document.getElementById("ending");
+
+  // Build the three work links from the same STOPS data the stops use,
+  // so the copy and URLs can never drift apart.
+  const list = document.getElementById("ending-list");
+  for (const stop of STOPS) {
+    const li = document.createElement("li");
+    li.className = "ending__item";
+
+    const label = document.createElement("span");
+    label.className = "ending__label";
+    label.textContent = stop.heading;
+
+    const link = document.createElement("a");
+    link.className = "ending__link";
+    link.href = stop.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = stop.linkText;
+
+    li.append(label, link);
+    list.append(li);
+  }
+
+  document.getElementById("ending-dismiss").addEventListener("click", closeEnding);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && ending.isOpen) closeEnding();
+  });
+}
+
+function openEnding() {
+  clearHeldInput();
+  ending.lastFocus = document.activeElement;
+  ending.root.hidden = false;
+  ending.isOpen = true;
+  document.getElementById("ending-portfolio").focus();
+}
+
+function closeEnding() {
+  ending.root.hidden = true;
+  ending.isOpen = false;
+  clearHeldInput();
+  if (ending.lastFocus) ending.lastFocus.focus();
+}
+
+
 /* 5. GAME ------------------------------------------------------------------ */
 
 export function startGame() {
@@ -360,6 +421,8 @@ export function startGame() {
   // Stop tracking
   const visited = new Set();
   let currentStop = null;      // the stop Uno is standing at, if any
+  let endingShown = false;
+  let atEnd = false;
   const interactBtn = document.getElementById("btn-interact");
 
   updateStopCounter(0, STOPS.length);
@@ -370,6 +433,14 @@ export function startGame() {
     // --- Which stop, if any, is Uno standing at? ---
     const unoCentre = uno.pos.x + SIZE.unoW / 2;
     currentStop = STOPS.find(s => Math.abs(unoCentre - s.x) < STOP_RADIUS) || null;
+
+    // --- End of the walk ---
+    atEnd = uno.pos.x >= ENDING_X;
+
+    if (atEnd && !endingShown && !modal.isOpen && !ending.isOpen) {
+      endingShown = true;
+      openEnding();
+    }
 
     // First arrival opens the modal on its own. This is the whole point:
     // a visitor should never have to know to press anything to see the work.
@@ -382,19 +453,26 @@ export function startGame() {
     // The interact button only works where there's something to interact with
     if (interactBtn) interactBtn.disabled = !currentStop;
 
-    // Re-opening a stop already seen
+    // The interact button works at a stop, and at the end to see the
+    // wrap-up again.
+    if (interactBtn) interactBtn.disabled = !(currentStop || atEnd);
+
+    // Re-opening something already seen
     const wantsInteract = input.interact;
     input.interact = false;
-    if (wantsInteract && currentStop && !modal.isOpen) openModal(currentStop);
+    if (wantsInteract && !modal.isOpen && !ending.isOpen) {
+      if (currentStop) openModal(currentStop);
+      else if (atEnd) openEnding();
+    }
 
     // The prompt hints at the button, but only once it has a job to do
     prompt.pos.x = uno.pos.x + SIZE.unoW / 2;
     prompt.pos.y = uno.pos.y - 18;
-    prompt.opacity = (currentStop && !modal.isOpen) ? 0.85 : 0;
+    prompt.opacity = ((currentStop || atEnd) && !modal.isOpen && !ending.isOpen) ? 0.85 : 0;
 
-    // While the modal is up, Uno stands still — otherwise he wanders off
+    // While a card is up, Uno stands still — otherwise he wanders off
     // behind it while the visitor is reading.
-    if (modal.isOpen) {
+    if (modal.isOpen || ending.isOpen) {
       walkTime = 0;
       return;
     }
@@ -439,7 +517,14 @@ export function startGame() {
     const bob = (onGround && dir !== 0)
       ? Math.abs(Math.sin(walkTime * FEEL.bobSpeed)) * FEEL.bobHeight
       : 0;
-    uno.pos.y = unoY - bob;
+
+    // At the end of the walk he sits down. With placeholders that's just a
+    // squash; Phase H swaps in a real sitting sprite.
+    const sitting = atEnd && onGround && dir === 0;
+    uno.height = sitting ? SIZE.unoSitH : SIZE.unoH;
+    uno.pos.y = sitting
+      ? SIZE.groundY - SIZE.unoSitH
+      : unoY - bob;
 
     nose.pos.x = uno.pos.x + (facing === 1 ? SIZE.unoW - 12 : 2);
     nose.pos.y = uno.pos.y + 10;
@@ -457,6 +542,7 @@ export function startGame() {
   });
 
   initModal();
+  initEnding();
   wireKeyboard();
   wireOnScreenButtons();
 
