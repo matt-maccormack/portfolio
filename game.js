@@ -51,6 +51,7 @@ const LOOK = {
   uno:        [235, 230, 220],
   unoAccent:  [ 40,  44,  50],
   landmark:   [201, 162,  39],
+  bone:       [240, 233, 214],
 };
 
 const SIZE = {
@@ -106,6 +107,21 @@ const STOP_RADIUS = 55;
 // so Uno comes to rest rather than jamming against the edge.
 const ENDING_X = LEVEL_END - 60;
 
+/* Bones. Purely cosmetic — nothing in the game depends on how many you get,
+   and there is no way to lose. `high: true` puts one above head height so
+   the jump has something to do; the rest sit at walking height.
+   Kept clear of the three stops so nothing overlaps a pillar. */
+const BONES = [
+  { x:  200 }, { x:  340 }, { x:  430, high: true }, { x:  560 },
+  { x:  760, high: true }, { x: 1080 }, { x: 1240 }, { x: 1420, high: true },
+  { x: 1620 }, { x: 1880, high: true }, { x: 2440 }, { x: 2620 },
+  { x: 2780, high: true }, { x: 2960 }, { x: 3120, high: true }, { x: 3620 },
+  { x: 3720 }, { x: 3880 }, { x: 4000, high: true }, { x: 4040 },
+];
+
+const BONE_Y_GROUND = 28;   // pixels above the ground
+const BONE_Y_HIGH   = 96;   // needs a jump; peak clearance is ~116
+
 // Scenery blocks, purely so movement is readable. Not interactive.
 const SCENERY = [
   { x:  380, w: 120, h: 150 }, { x:  620, w:  90, h: 210 },
@@ -136,7 +152,9 @@ function clearHeldInput() {
 
 function wireKeyboard() {
   window.addEventListener("keydown", (e) => {
-    if (modal.isOpen || e.repeat) return;   // the modal has its own keys
+    // While a card is up it owns the keyboard — otherwise space would both
+    // jump and press whatever button has focus.
+    if (modal.isOpen || ending.isOpen || e.repeat) return;
     switch (e.key) {
       case "ArrowLeft":  case "a": case "A": keys.left = true;  break;
       case "ArrowRight": case "d": case "D": keys.right = true; break;
@@ -244,7 +262,17 @@ function closeModal() {
 
 function updateStopCounter(visited, total) {
   const el = document.getElementById("stop-counter");
-  if (el) el.textContent = `Stops visited ${visited}/${total}`;
+  if (el) el.textContent = `Stops ${visited}/${total}`;
+}
+
+function updateBoneCounter(collected, total) {
+  const el = document.getElementById("bone-counter");
+  if (!el) return;
+  el.textContent = `🦴 ${collected}/${total}`;
+  // Brief pulse so a pickup is felt as well as counted
+  el.classList.remove("hud__item--pop");
+  void el.offsetWidth;            // forces the browser to restart the animation
+  el.classList.add("hud__item--pop");
 }
 
 
@@ -288,8 +316,18 @@ function initEnding() {
   });
 }
 
-function openEnding() {
+function openEnding(bonesCollected, bonesTotal) {
   clearHeldInput();
+
+  // Bones are charm only, so this is a remark, never a score to beat.
+  const bonesLine = document.getElementById("ending-bones");
+  if (bonesLine && typeof bonesCollected === "number") {
+    bonesLine.textContent = bonesCollected === bonesTotal
+      ? `🦴 Every single bone — all ${bonesTotal} of them. Uno is thrilled.`
+      : `🦴 ${bonesCollected} of ${bonesTotal} bones collected`;
+    bonesLine.hidden = false;
+  }
+
   ending.lastFocus = document.activeElement;
   ending.root.hidden = false;
   ending.isOpen = true;
@@ -380,6 +418,25 @@ export function startGame() {
     ]);
   }
 
+  // --- Bones ---
+  const bones = BONES.map(b => {
+    const y = SIZE.groundY - (b.high ? BONE_Y_HIGH : BONE_Y_GROUND);
+    return {
+      x: b.x,
+      y,
+      collected: false,
+      obj: k.add([
+        k.rect(16, 9),
+        k.pos(b.x, y),
+        k.color(...LOOK.bone),
+        k.anchor("center"),
+        k.z(4),
+      ]),
+    };
+  });
+
+  let bonesCollected = 0;
+
   // Floating "press to look" prompt. Follows Uno, shown only at a stop
   // he has already opened once.
   const prompt = k.add([
@@ -426,12 +483,29 @@ export function startGame() {
   const interactBtn = document.getElementById("btn-interact");
 
   updateStopCounter(0, STOPS.length);
+  updateBoneCounter(0, bones.length);
 
   k.onUpdate(() => {
     const dt = k.dt();
 
     // --- Which stop, if any, is Uno standing at? ---
     const unoCentre = uno.pos.x + SIZE.unoW / 2;
+
+    // --- Bone pickups ---
+    // Uno's box against each bone's centre, with a little grace either way
+    // so collecting feels generous rather than fiddly.
+    const unoMidY = uno.pos.y + uno.height / 2;
+    for (const bone of bones) {
+      if (bone.collected) continue;
+      const closeX = Math.abs(bone.x - unoCentre) < SIZE.unoW / 2 + 10;
+      const closeY = Math.abs(bone.y - unoMidY) < uno.height / 2 + 12;
+      if (closeX && closeY) {
+        bone.collected = true;
+        k.destroy(bone.obj);
+        bonesCollected += 1;
+        updateBoneCounter(bonesCollected, bones.length);
+      }
+    }
     currentStop = STOPS.find(s => Math.abs(unoCentre - s.x) < STOP_RADIUS) || null;
 
     // --- End of the walk ---
@@ -439,7 +513,7 @@ export function startGame() {
 
     if (atEnd && !endingShown && !modal.isOpen && !ending.isOpen) {
       endingShown = true;
-      openEnding();
+      openEnding(bonesCollected, bones.length);
     }
 
     // First arrival opens the modal on its own. This is the whole point:
@@ -462,7 +536,7 @@ export function startGame() {
     input.interact = false;
     if (wantsInteract && !modal.isOpen && !ending.isOpen) {
       if (currentStop) openModal(currentStop);
-      else if (atEnd) openEnding();
+      else if (atEnd) openEnding(bonesCollected, bones.length);
     }
 
     // The prompt hints at the button, but only once it has a job to do

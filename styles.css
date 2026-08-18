@@ -678,6 +678,7 @@ body.is-playing {
    Kaplay writes width/height directly onto the canvas as inline styles,
    which would override anything set here. */
 .game__stage {
+  position: relative;   /* so the HUD can sit over the canvas */
   width: min(100%, 1152px);
   aspect-ratio: 16 / 9;
   max-height: 78vh;
@@ -922,4 +923,48 @@ body.is-playing {
 .ending__link:focus-visible {
   outline: 2px solid var(--brass);
   outline-offset: 3px;
+}
+
+
+/* --- In-game HUD (Phase F) ------------------------------------------------
+   Bone count and stop count, laid over the top corners of the game view.
+   Kept as HTML rather than drawn into the canvas so it can use the real
+   fonts and emoji, and stays readable at any scale.
+   -------------------------------------------------------------------------- */
+
+.hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: clamp(0.5rem, 1.5vw, 0.875rem);
+  pointer-events: none;   /* never steals a click from the game */
+}
+
+.hud__item {
+  padding: 0.35rem 0.7rem;
+  font-family: var(--font-pixel);
+  font-size: clamp(0.625rem, 0.55rem + 0.25vw, 0.8125rem);
+  line-height: 1.4;
+  color: var(--cream);
+  background-color: rgba(8, 17, 26, 0.72);
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  border-radius: 4px;
+}
+
+/* A quick nudge when a bone is picked up, so it registers */
+@keyframes hud-pop {
+  0%   { transform: scale(1);    border-color: rgba(201, 162, 39, 0.35); }
+  35%  { transform: scale(1.12); border-color: var(--brass); }
+  100% { transform: scale(1);    border-color: rgba(201, 162, 39, 0.35); }
+}
+
+.hud__item--pop {
+  animation: hud-pop 0.28s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud__item--pop { animation: none; }
 }
