@@ -67,6 +67,7 @@ const SIZE = {
 };
 
 // Sizes of the artwork files, so the tiling maths stays honest
+const HYDRANT_H     = 84;    // height of hydrant.png
 const GROUND_TILE_W = 380;
 const GROUND_TILE_H = 42;
 const BG_TILE_W     = 1089;  // width of boston-bg.jpg
@@ -368,6 +369,7 @@ export function startGame() {
   k.loadSprite("uno-sit",  "assets/sprites/uno-sit.png");
   k.loadSprite("uno-jump", "assets/sprites/uno-jump.png");
   k.loadSprite("bone",     "assets/sprites/bone.png");
+  k.loadSprite("hydrant",  "assets/sprites/hydrant.png");
   k.loadSprite("ground",   "assets/sprites/ground.png");
   k.loadSprite("bg",       "assets/sprites/boston-bg.jpg");
 
@@ -410,21 +412,26 @@ function buildScene(k, setCam) {
 
   /* --- Stops ---------------------------------------------------------- */
 
-  for (const stop of STOPS) {
-    k.add([
-      k.rect(14, 110),
-      k.pos(stop.x, SIZE.groundY - 110),
-      k.color(...LOOK.landmark),
+  // Each stop is a fire hydrant — the one street object nobody questions a
+  // dog stopping at. The hydrant itself stays planted; the number above it
+  // bobs, because a floating marker is what actually catches the eye against
+  // a busy painted background.
+  const stopMarkers = STOPS.map(stop => ({
+    stop,
+    hydrant: k.add([
+      k.sprite("hydrant"),
+      k.pos(stop.x, SIZE.groundY),
+      k.anchor("bot"),
       k.z(4),
-    ]);
-    k.add([
-      k.text(stop.label, { size: 18 }),
-      k.pos(stop.x + 7, SIZE.groundY - 132),
+    ]),
+    label: k.add([
+      k.text(stop.label, { size: 16 }),
+      k.pos(stop.x, SIZE.groundY - HYDRANT_H - 18),
       k.anchor("center"),
       k.color(...LOOK.landmark),
       k.z(4),
-    ]);
-  }
+    ]),
+  }));
 
   /* --- Bones ---------------------------------------------------------- */
 
@@ -540,6 +547,14 @@ function buildScene(k, setCam) {
     }
 
     currentStop = STOPS.find(s => Math.abs(posX - s.x) < STOP_RADIUS) || null;
+
+    // Numbers float above their hydrant, and fade once that stop has been
+    // read, so it is obvious at a glance which ones are still waiting.
+    const t = k.time();
+    for (const m of stopMarkers) {
+      m.label.pos.y = SIZE.groundY - HYDRANT_H - 18 + Math.sin(t * 2.2) * 4;
+      m.label.opacity = visited.has(m.stop) ? 0.35 : 1;
+    }
     atEnd = posX >= ENDING_X;
 
     if (atEnd && !endingShown && !modal.isOpen && !ending.isOpen) {
