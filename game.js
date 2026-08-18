@@ -1,17 +1,22 @@
 /* ==========================================================================
-   THE GAME — Phase D: core loop, placeholders only
+   THE GAME
    ==========================================================================
 
-   Everything on screen right now is a coloured rectangle on purpose. This
-   phase is about how walking FEELS — speed, scroll, where the camera sits —
-   while it is still cheap to change. Real artwork arrives in Phase H.
+   Uno walks a short stretch of Boston. Three stops along the way each open a
+   card with one piece of Matt's work; bones are scattered about for charm.
+
+   Artwork lives in assets/sprites. Uno and the bone were drawn separately;
+   the cobblestone and sky were cut out of the In-Game-Experience painting and
+   mirrored so they repeat seamlessly. The buildings are still plain shapes —
+   the painting has no clean way to cut individual ones out.
 
    Contents:
      1. FEEL      — the numbers worth tuning
-     2. LOOK      — placeholder colours and sizes (Phase H replaces this)
+     2. LOOK      — colours for the shapes that are still drawn in code
      3. LEVEL     — where things sit along the walk
      4. INPUT     — keyboard + on-screen buttons
-     5. GAME      — the actual scene
+     4b/4c        — the stop card and the ending screen
+     5. GAME      — loading the art, then the scene and the frame loop
    ========================================================================== */
 
 import kaplay from "https://cdn.jsdelivr.net/npm/kaplay@3001.0.19/dist/kaplay.mjs";
@@ -26,6 +31,7 @@ const FEEL = {
   cameraEase:   0.12,  // 0-1. Lower = camera lags more softly behind Uno
   bobHeight:    3,     // how far Uno bounces while walking (pixels)
   bobSpeed:     9,     // how fast that bounce cycles
+  parallaxSky:  0.10,  // the sky barely moves — it is furthest away
   parallaxFar:  0.25,  // how much the far skyline moves vs the camera
   parallaxMid:  0.55,
 
@@ -43,25 +49,33 @@ const FEEL = {
    -------------------------------------------------------------------------- */
 
 const LOOK = {
-  sky:        [ 22,  42,  64],
-  skylineFar: [ 30,  54,  78],
-  skylineMid: [ 38,  70,  96],
-  ground:     [ 46,  40,  38],
-  groundLine: [ 92,  78,  66],
+  // Sampled from the painting so the drawn shapes sit with the artwork
+  sky:        [103, 164, 198],   // matches the bottom of the sky image
+  skylineFar: [ 75, 111, 133],
+  skylineMid: [ 52,  82, 104],
+  ground:     [ 38,  34,  32],
   uno:        [235, 230, 220],
-  unoAccent:  [ 40,  44,  50],
   landmark:   [201, 162,  39],
-  bone:       [240, 233, 214],
 };
 
 const SIZE = {
   viewW:      960,   // the game's virtual resolution; it scales to fit
   viewH:      540,
   groundY:    430,   // top edge of the ground
-  unoW:       38,
-  unoH:       44,
-  unoSitH:    34,   // squashed a little when he sits at the end
+
+  // Uno's drawn size comes from the sprite files. unoHitW is deliberately
+  // narrower than the picture — the running pose is long and mostly tail,
+  // and collecting a bone should mean touching him, not passing near him.
+  unoH:       84,    // running sprite height
+  unoHitW:    72,
 };
+
+// Sizes of the artwork files, so the tiling maths stays honest
+const GROUND_TILE_W = 380;
+const GROUND_TILE_H = 42;
+const SKY_TILE_W    = 712;
+
+const START_X = 120;   // where Uno begins the walk
 
 
 /* 3. LEVEL -----------------------------------------------------------------
@@ -355,43 +369,56 @@ export function startGame() {
     background: LOOK.sky,
     global: false,        // keep Kaplay's functions off the global scope
     debug: false,
-    crisp: true,          // no smoothing — right look for pixel art later
+    crisp: true,          // no smoothing between pixels
   });
 
   // KAPLAY renamed some camera helpers between versions; support both.
   const setCam = k.setCamPos ? (p) => k.setCamPos(p) : (p) => k.camPos(p);
 
-  // --- Parallax bands (drawn behind everything, moved manually) ---
+  // Artwork. Nothing can be drawn until these have downloaded, so the scene
+  // is built inside onLoad rather than straight away.
+  k.loadSprite("uno-run", "assets/sprites/uno-run.png");
+  k.loadSprite("uno-sit", "assets/sprites/uno-sit.png");
+  k.loadSprite("bone",    "assets/sprites/bone.png");
+  k.loadSprite("ground",  "assets/sprites/ground.png");
+  k.loadSprite("sky",     "assets/sprites/sky.png");
+
+  k.onLoad(() => buildScene(k, setCam));
+}
+
+
+function buildScene(k, setCam) {
+
+  /* --- Backdrop ------------------------------------------------------- */
+
+  // Sky band, repeated across the level and drifting slowly for depth.
+  // Enough tiles to cover the screen twice over, then wrapped each frame.
+  const skyCount = Math.ceil(SIZE.viewW / SKY_TILE_W) + 2;
+  const skyTiles = [];
+  for (let i = 0; i < skyCount; i++) {
+    skyTiles.push(k.add([
+      k.sprite("sky"),
+      k.pos(i * SKY_TILE_W, 0),
+      k.z(0),
+    ]));
+  }
+
+  // Distant and mid building silhouettes, still simple shapes — the painting
+  // has no clean way to cut individual buildings out.
   const far = k.add([
-    k.rect(LEVEL_END + SIZE.viewW * 2, 120),
+    k.rect(LEVEL_END + SIZE.viewW * 3, 120),
     k.pos(0, SIZE.groundY - 190),
     k.color(...LOOK.skylineFar),
-    k.z(0),
-  ]);
-
-  const mid = k.add([
-    k.rect(LEVEL_END + SIZE.viewW * 2, 90),
-    k.pos(0, SIZE.groundY - 120),
-    k.color(...LOOK.skylineMid),
     k.z(1),
   ]);
 
-  // --- Ground ---
-  k.add([
-    k.rect(LEVEL_END + SIZE.viewW * 2, SIZE.viewH - SIZE.groundY),
-    k.pos(-SIZE.viewW, SIZE.groundY),
-    k.color(...LOOK.ground),
+  const mid = k.add([
+    k.rect(LEVEL_END + SIZE.viewW * 3, 90),
+    k.pos(0, SIZE.groundY - 120),
+    k.color(...LOOK.skylineMid),
     k.z(2),
   ]);
 
-  k.add([
-    k.rect(LEVEL_END + SIZE.viewW * 2, 3),
-    k.pos(-SIZE.viewW, SIZE.groundY),
-    k.color(...LOOK.groundLine),
-    k.z(3),
-  ]);
-
-  // --- Scenery blocks ---
   for (const s of SCENERY) {
     k.add([
       k.rect(s.w, s.h),
@@ -401,7 +428,29 @@ export function startGame() {
     ]);
   }
 
-  // --- The three stops (placeholder pillars until Phase H) ---
+  /* --- Ground --------------------------------------------------------- */
+
+  // Fill below the cobblestone so the bottom of the screen is never empty
+  k.add([
+    k.rect(LEVEL_END + SIZE.viewW * 3, SIZE.viewH),
+    k.pos(-SIZE.viewW, SIZE.groundY + GROUND_TILE_H - 2),
+    k.color(...LOOK.ground),
+    k.z(2),
+  ]);
+
+  // The cobblestone strip, laid end to end along the whole walk
+  const firstTile = -SIZE.viewW;
+  const tilesNeeded = Math.ceil((LEVEL_END + SIZE.viewW * 3) / GROUND_TILE_W);
+  for (let i = 0; i < tilesNeeded; i++) {
+    k.add([
+      k.sprite("ground"),
+      k.pos(firstTile + i * GROUND_TILE_W, SIZE.groundY),
+      k.z(3),
+    ]);
+  }
+
+  /* --- Stops ---------------------------------------------------------- */
+
   for (const stop of STOPS) {
     k.add([
       k.rect(14, 110),
@@ -418,7 +467,8 @@ export function startGame() {
     ]);
   }
 
-  // --- Bones ---
+  /* --- Bones ---------------------------------------------------------- */
+
   const bones = BONES.map(b => {
     const y = SIZE.groundY - (b.high ? BONE_Y_HIGH : BONE_Y_GROUND);
     return {
@@ -426,19 +476,35 @@ export function startGame() {
       y,
       collected: false,
       obj: k.add([
-        k.rect(16, 9),
+        k.sprite("bone"),
         k.pos(b.x, y),
-        k.color(...LOOK.bone),
         k.anchor("center"),
-        k.z(4),
+        k.z(5),
       ]),
     };
   });
 
   let bonesCollected = 0;
 
-  // Floating "press to look" prompt. Follows Uno, shown only at a stop
-  // he has already opened once.
+  /* --- Uno ------------------------------------------------------------ */
+
+  // Two sprites, one shown at a time. Both anchored at the bottom centre so
+  // his feet land on the same line whichever pose is showing.
+  const unoRun = k.add([
+    k.sprite("uno-run"),
+    k.pos(START_X, SIZE.groundY),
+    k.anchor("bot"),
+    k.z(6),
+  ]);
+
+  const unoSit = k.add([
+    k.sprite("uno-sit"),
+    k.pos(START_X, SIZE.groundY),
+    k.anchor("bot"),
+    k.opacity(0),
+    k.z(6),
+  ]);
+
   const prompt = k.add([
     k.text("● to look again", { size: 12 }),
     k.pos(0, 0),
@@ -448,36 +514,18 @@ export function startGame() {
     k.z(7),
   ]);
 
-  // --- Uno ---
-  const uno = k.add([
-    k.rect(SIZE.unoW, SIZE.unoH),
-    k.pos(120, SIZE.groundY - SIZE.unoH),
-    k.color(...LOOK.uno),
-    k.anchor("topleft"),
-    k.z(5),
-  ]);
+  /* --- State ---------------------------------------------------------- */
 
-  // A small dark block so you can tell which way he's facing
-  const nose = k.add([
-    k.rect(10, 10),
-    k.pos(0, 0),
-    k.color(...LOOK.unoAccent),
-    k.z(6),
-  ]);
-
-  let facing = 1;      // 1 = right, -1 = left
+  let posX = START_X;              // Uno's centre
+  let feetY = SIZE.groundY;        // where his paws are
+  let velY = 0;
+  let onGround = true;
+  let facing = 1;
   let walkTime = 0;
   let camX = SIZE.viewW / 2;
 
-  // Vertical state. groundLevel is where his feet rest when not jumping.
-  const groundLevel = SIZE.groundY - SIZE.unoH;
-  let unoY = groundLevel;
-  let velY = 0;
-  let onGround = true;
-
-  // Stop tracking
   const visited = new Set();
-  let currentStop = null;      // the stop Uno is standing at, if any
+  let currentStop = null;
   let endingShown = false;
   let atEnd = false;
   const interactBtn = document.getElementById("btn-interact");
@@ -485,20 +533,18 @@ export function startGame() {
   updateStopCounter(0, STOPS.length);
   updateBoneCounter(0, bones.length);
 
+  /* --- Frame ---------------------------------------------------------- */
+
   k.onUpdate(() => {
     const dt = k.dt();
 
-    // --- Which stop, if any, is Uno standing at? ---
-    const unoCentre = uno.pos.x + SIZE.unoW / 2;
-
-    // --- Bone pickups ---
-    // Uno's box against each bone's centre, with a little grace either way
-    // so collecting feels generous rather than fiddly.
-    const unoMidY = uno.pos.y + uno.height / 2;
+    // Bone pickups. Measured against a box narrower than the drawing, so
+    // collecting feels fair rather than magnetic.
+    const bodyMidY = feetY - SIZE.unoH / 2;
     for (const bone of bones) {
       if (bone.collected) continue;
-      const closeX = Math.abs(bone.x - unoCentre) < SIZE.unoW / 2 + 10;
-      const closeY = Math.abs(bone.y - unoMidY) < uno.height / 2 + 12;
+      const closeX = Math.abs(bone.x - posX) < SIZE.unoHitW / 2 + 12;
+      const closeY = Math.abs(bone.y - bodyMidY) < SIZE.unoH / 2 + 14;
       if (closeX && closeY) {
         bone.collected = true;
         k.destroy(bone.obj);
@@ -506,10 +552,9 @@ export function startGame() {
         updateBoneCounter(bonesCollected, bones.length);
       }
     }
-    currentStop = STOPS.find(s => Math.abs(unoCentre - s.x) < STOP_RADIUS) || null;
 
-    // --- End of the walk ---
-    atEnd = uno.pos.x >= ENDING_X;
+    currentStop = STOPS.find(s => Math.abs(posX - s.x) < STOP_RADIUS) || null;
+    atEnd = posX >= ENDING_X;
 
     if (atEnd && !endingShown && !modal.isOpen && !ending.isOpen) {
       endingShown = true;
@@ -524,14 +569,9 @@ export function startGame() {
       openModal(currentStop);
     }
 
-    // The interact button only works where there's something to interact with
-    if (interactBtn) interactBtn.disabled = !currentStop;
-
-    // The interact button works at a stop, and at the end to see the
-    // wrap-up again.
+    // Interact works at a stop, and at the end to see the wrap-up again
     if (interactBtn) interactBtn.disabled = !(currentStop || atEnd);
 
-    // Re-opening something already seen
     const wantsInteract = input.interact;
     input.interact = false;
     if (wantsInteract && !modal.isOpen && !ending.isOpen) {
@@ -539,15 +579,16 @@ export function startGame() {
       else if (atEnd) openEnding(bonesCollected, bones.length);
     }
 
-    // The prompt hints at the button, but only once it has a job to do
-    prompt.pos.x = uno.pos.x + SIZE.unoW / 2;
-    prompt.pos.y = uno.pos.y - 18;
+    prompt.pos.x = posX;
+    prompt.pos.y = feetY - SIZE.unoH - 16;
     prompt.opacity = ((currentStop || atEnd) && !modal.isOpen && !ending.isOpen) ? 0.85 : 0;
 
     // While a card is up, Uno stands still — otherwise he wanders off
     // behind it while the visitor is reading.
     if (modal.isOpen || ending.isOpen) {
       walkTime = 0;
+      unoRun.opacity = atEnd && onGround ? 0 : 1;
+      unoSit.opacity = atEnd && onGround ? 1 : 0;
       return;
     }
 
@@ -555,20 +596,18 @@ export function startGame() {
     const goRight = input.right || keys.right;
     const dir = (goRight ? 1 : 0) - (goLeft ? 1 : 0);
 
-    // Move, then clamp to the level so you can't walk off either end
     if (dir !== 0) {
       facing = dir;
-      uno.pos.x += dir * FEEL.walkSpeed * dt;
-      uno.pos.x = Math.max(40, Math.min(uno.pos.x, LEVEL_END));
+      posX += dir * FEEL.walkSpeed * dt;
+      posX = Math.max(SIZE.unoHitW / 2 + 20, Math.min(posX, LEVEL_END));
       walkTime += dt;
     } else {
       walkTime = 0;
     }
 
-    // --- Jump ---
-    // Only launches from the ground, so holding the key can't fly.
+    // --- Jump: only launches from the ground, so holding a key can't fly ---
     const wantsJump = input.jump;
-    input.jump = false;   // one-shot: consumed whether or not it was used
+    input.jump = false;
 
     if (wantsJump && onGround) {
       velY = -FEEL.jumpSpeed;
@@ -577,42 +616,51 @@ export function startGame() {
 
     if (!onGround) {
       velY += FEEL.gravity * dt;
-      unoY += velY * dt;
-
-      if (unoY >= groundLevel) {   // landed
-        unoY = groundLevel;
+      feetY += velY * dt;
+      if (feetY >= SIZE.groundY) {
+        feetY = SIZE.groundY;
         velY = 0;
         onGround = true;
       }
     }
 
-    // Gentle bob while walking so movement reads as walking, not sliding.
-    // Suppressed mid-air, where it would look like a twitch.
     const bob = (onGround && dir !== 0)
       ? Math.abs(Math.sin(walkTime * FEEL.bobSpeed)) * FEEL.bobHeight
       : 0;
 
-    // At the end of the walk he sits down. With placeholders that's just a
-    // squash; Phase H swaps in a real sitting sprite.
+    // He sits once he has arrived and stopped moving
     const sitting = atEnd && onGround && dir === 0;
-    uno.height = sitting ? SIZE.unoSitH : SIZE.unoH;
-    uno.pos.y = sitting
-      ? SIZE.groundY - SIZE.unoSitH
-      : unoY - bob;
+    unoRun.opacity = sitting ? 0 : 1;
+    unoSit.opacity = sitting ? 1 : 0;
 
-    nose.pos.x = uno.pos.x + (facing === 1 ? SIZE.unoW - 12 : 2);
-    nose.pos.y = uno.pos.y + 10;
+    unoRun.pos.x = posX;
+    unoRun.pos.y = feetY - bob;
+    unoRun.flipX = facing === -1;
 
-    // Camera eases toward Uno and stops at the level edges, so he sits
-    // centred through the middle of the walk but you still see both ends.
+    unoSit.pos.x = posX;
+    unoSit.pos.y = feetY;
+    unoSit.flipX = facing === -1;
+
+    // Camera eases toward Uno and stops at the level edges
     const half = SIZE.viewW / 2;
-    const targetX = Math.max(half, Math.min(uno.pos.x + SIZE.unoW / 2, LEVEL_END - half + 200));
+    const targetX = Math.max(half, Math.min(posX, LEVEL_END - half + 200));
     camX += (targetX - camX) * FEEL.cameraEase;
     setCam(k.vec2(camX, SIZE.viewH / 2));
 
-    // Parallax: the further away a band is, the less it shifts
-    far.pos.x = (camX - half) * (1 - FEEL.parallaxFar) - SIZE.viewW;
-    mid.pos.x = (camX - half) * (1 - FEEL.parallaxMid) - SIZE.viewW;
+    // Parallax: the further away a layer is, the less it shifts
+    const drift = (camX - half);
+    far.pos.x = drift * (1 - FEEL.parallaxFar) - SIZE.viewW;
+    mid.pos.x = drift * (1 - FEEL.parallaxMid) - SIZE.viewW;
+
+    // The sky drifts slowest of all, and wraps so it never runs out
+    const skyShift = drift * (1 - FEEL.parallaxSky);
+    for (let i = 0; i < skyTiles.length; i++) {
+      const base = skyShift + i * SKY_TILE_W;
+      const span = SKY_TILE_W * skyTiles.length;
+      // keep each tile within one span of the camera
+      let x = base - Math.floor((base - (camX - half - SKY_TILE_W)) / span) * span;
+      skyTiles[i].pos.x = x;
+    }
   });
 
   initModal();
@@ -621,11 +669,10 @@ export function startGame() {
   wireOnScreenButtons();
 
   // Add ?debug to the URL to read the walk position from the browser console.
-  // Handy for tuning the numbers in FEEL. Off for normal visitors.
   if (new URLSearchParams(location.search).has("debug")) {
-    window.unoX = () => Math.round(uno.pos.x);
+    window.unoX = () => Math.round(posX);
     window.camX = () => Math.round(camX);
-    window.unoY = () => Math.round(unoY);
+    window.unoY = () => Math.round(feetY);
     window.onGround = () => onGround;
   }
 }
