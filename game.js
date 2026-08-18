@@ -5,10 +5,10 @@
    Uno walks a short stretch of Boston. Three stops along the way each open a
    card with one piece of Matt's work; bones are scattered about for charm.
 
-   Artwork lives in assets/sprites. Uno and the bone were drawn separately;
-   the cobblestone and sky were cut out of the In-Game-Experience painting and
-   mirrored so they repeat seamlessly. The buildings are still plain shapes —
-   the painting has no clean way to cut individual ones out.
+   Artwork lives in assets/sprites. Uno (running, sitting, leaping) and the
+   bone were drawn separately. The city backdrop is a single painting that
+   repeats and drifts slowly behind the action. The cobblestone was cut from
+   the In-Game-Experience painting and mirrored so it repeats seamlessly.
 
    Contents:
      1. FEEL      — the numbers worth tuning
@@ -31,9 +31,8 @@ const FEEL = {
   cameraEase:   0.12,  // 0-1. Lower = camera lags more softly behind Uno
   bobHeight:    3,     // how far Uno bounces while walking (pixels)
   bobSpeed:     9,     // how fast that bounce cycles
-  parallaxSky:  0.10,  // the sky barely moves — it is furthest away
-  parallaxFar:  0.25,  // how much the far skyline moves vs the camera
-  parallaxMid:  0.55,
+  parallaxBg:   0.45,  // how much the city drifts vs the camera. Lower =
+                       // further away. Raise it and the city rushes past.
 
   // Jump. Higher gravity = snappier, less floaty. These two together decide
   // how high he goes and how long he hangs there.
@@ -42,17 +41,14 @@ const FEEL = {
 };
 
 
-/* 2. LOOK — PLACEHOLDER ART LAYER ------------------------------------------
-   >>> PHASE H: everything in this block gets swapped for real sprites.
-   >>> No game logic reads anything below except through these names, so
-   >>> replacing them should not require touching sections 3-5.
+/* 2. LOOK ------------------------------------------------------------------
+   Only a few things are still drawn as plain shapes: the fill below the
+   cobblestone, and the stop markers. Everything else is artwork now.
    -------------------------------------------------------------------------- */
 
 const LOOK = {
   // Sampled from the painting so the drawn shapes sit with the artwork
   sky:        [103, 164, 198],   // matches the bottom of the sky image
-  skylineFar: [ 75, 111, 133],
-  skylineMid: [ 52,  82, 104],
   ground:     [ 38,  34,  32],
   uno:        [235, 230, 220],
   landmark:   [201, 162,  39],
@@ -73,14 +69,13 @@ const SIZE = {
 // Sizes of the artwork files, so the tiling maths stays honest
 const GROUND_TILE_W = 380;
 const GROUND_TILE_H = 42;
-const SKY_TILE_W    = 712;
+const BG_TILE_W     = 1089;  // width of boston-bg.jpg
 
 const START_X = 120;   // where Uno begins the walk
 
 
 /* 3. LEVEL -----------------------------------------------------------------
-   A short, flat walk. Landmarks are placeholders for the three stops that
-   Phase E turns into real interactions.
+   A short, flat walk with three stops along it.
    -------------------------------------------------------------------------- */
 
 const LEVEL_END = 4200;
@@ -136,14 +131,6 @@ const BONES = [
 const BONE_Y_GROUND = 28;   // pixels above the ground
 const BONE_Y_HIGH   = 96;   // needs a jump; peak clearance is ~116
 
-// Scenery blocks, purely so movement is readable. Not interactive.
-const SCENERY = [
-  { x:  380, w: 120, h: 150 }, { x:  620, w:  90, h: 210 },
-  { x: 1180, w: 140, h: 180 }, { x: 1450, w: 100, h: 130 },
-  { x: 1760, w: 120, h: 240 }, { x: 2500, w: 110, h: 160 },
-  { x: 2780, w: 150, h: 200 }, { x: 3050, w:  90, h: 140 },
-  { x: 3800, w: 130, h: 190 }, { x: 4050, w: 100, h: 150 },
-];
 
 
 /* 4. INPUT -----------------------------------------------------------------
@@ -377,11 +364,12 @@ export function startGame() {
 
   // Artwork. Nothing can be drawn until these have downloaded, so the scene
   // is built inside onLoad rather than straight away.
-  k.loadSprite("uno-run", "assets/sprites/uno-run.png");
-  k.loadSprite("uno-sit", "assets/sprites/uno-sit.png");
-  k.loadSprite("bone",    "assets/sprites/bone.png");
-  k.loadSprite("ground",  "assets/sprites/ground.png");
-  k.loadSprite("sky",     "assets/sprites/sky.png");
+  k.loadSprite("uno-run",  "assets/sprites/uno-run.png");
+  k.loadSprite("uno-sit",  "assets/sprites/uno-sit.png");
+  k.loadSprite("uno-jump", "assets/sprites/uno-jump.png");
+  k.loadSprite("bone",     "assets/sprites/bone.png");
+  k.loadSprite("ground",   "assets/sprites/ground.png");
+  k.loadSprite("bg",       "assets/sprites/boston-bg.jpg");
 
   k.onLoad(() => buildScene(k, setCam));
 }
@@ -391,54 +379,25 @@ function buildScene(k, setCam) {
 
   /* --- Backdrop ------------------------------------------------------- */
 
-  // Sky band, repeated across the level and drifting slowly for depth.
-  // Enough tiles to cover the screen twice over, then wrapped each frame.
-  const skyCount = Math.ceil(SIZE.viewW / SKY_TILE_W) + 2;
-  const skyTiles = [];
-  for (let i = 0; i < skyCount; i++) {
-    skyTiles.push(k.add([
-      k.sprite("sky"),
-      k.pos(i * SKY_TILE_W, 0),
+  // The painted Boston skyline, carrying its own sky. It is narrower than the
+  // walk, so it repeats and drifts slower than the ground for depth — you
+  // pass Fenway about twice over the whole walk, which is normal for a
+  // side-scroller. Enough tiles to cover the screen, then wrapped each frame.
+  const bgCount = Math.ceil(SIZE.viewW / BG_TILE_W) + 2;
+  const bgTiles = [];
+  for (let i = 0; i < bgCount; i++) {
+    bgTiles.push(k.add([
+      k.sprite("bg"),
+      k.pos(i * BG_TILE_W, 0),
       k.z(0),
     ]));
   }
 
-  // Distant and mid building silhouettes, still simple shapes — the painting
-  // has no clean way to cut individual buildings out.
-  const far = k.add([
-    k.rect(LEVEL_END + SIZE.viewW * 3, 120),
-    k.pos(0, SIZE.groundY - 190),
-    k.color(...LOOK.skylineFar),
-    k.z(1),
-  ]);
-
-  const mid = k.add([
-    k.rect(LEVEL_END + SIZE.viewW * 3, 90),
-    k.pos(0, SIZE.groundY - 120),
-    k.color(...LOOK.skylineMid),
-    k.z(2),
-  ]);
-
-  for (const s of SCENERY) {
-    k.add([
-      k.rect(s.w, s.h),
-      k.pos(s.x, SIZE.groundY - s.h),
-      k.color(...LOOK.skylineMid),
-      k.z(2),
-    ]);
-  }
-
   /* --- Ground --------------------------------------------------------- */
 
-  // Fill below the cobblestone so the bottom of the screen is never empty
-  k.add([
-    k.rect(LEVEL_END + SIZE.viewW * 3, SIZE.viewH),
-    k.pos(-SIZE.viewW, SIZE.groundY + GROUND_TILE_H - 2),
-    k.color(...LOOK.ground),
-    k.z(2),
-  ]);
-
-  // The cobblestone strip, laid end to end along the whole walk
+  // The cobblestone strip, laid end to end along the whole walk. It scrolls
+  // at full speed under Uno's feet, while the painted walkway behind it
+  // drifts with the rest of the city.
   const firstTile = -SIZE.viewW;
   const tilesNeeded = Math.ceil((LEVEL_END + SIZE.viewW * 3) / GROUND_TILE_W);
   for (let i = 0; i < tilesNeeded; i++) {
@@ -504,6 +463,33 @@ function buildScene(k, setCam) {
     k.opacity(0),
     k.z(6),
   ]);
+
+  const unoJump = k.add([
+    k.sprite("uno-jump"),
+    k.pos(START_X, SIZE.groundY),
+    k.anchor("bot"),
+    k.opacity(0),
+    k.z(6),
+  ]);
+
+  // Only ever one pose visible at a time
+  const showPose = (which) => {
+    unoRun.opacity  = which === "run"  ? 1 : 0;
+    unoSit.opacity  = which === "sit"  ? 1 : 0;
+    unoJump.opacity = which === "jump" ? 1 : 0;
+  };
+
+  // All three poses share a position, so they only need setting in one place.
+  // The bob is only applied to the running pose — a sitting dog shouldn't bounce.
+  let bobOffset = 0;
+  const placeUno = () => {
+    for (const s of [unoRun, unoSit, unoJump]) {
+      s.pos.x = posX;
+      s.pos.y = feetY;
+      s.flipX = facing === -1;
+    }
+    unoRun.pos.y = feetY - bobOffset;
+  };
 
   const prompt = k.add([
     k.text("● to look again", { size: 12 }),
@@ -583,12 +569,25 @@ function buildScene(k, setCam) {
     prompt.pos.y = feetY - SIZE.unoH - 16;
     prompt.opacity = ((currentStop || atEnd) && !modal.isOpen && !ending.isOpen) ? 0.85 : 0;
 
-    // While a card is up, Uno stands still — otherwise he wanders off
-    // behind it while the visitor is reading.
+    // While a card is up, Uno stops walking — otherwise he wanders off behind
+    // it while the visitor is reading. He still finishes any jump he was in
+    // the middle of, though, rather than hanging in the air until dismissed.
     if (modal.isOpen || ending.isOpen) {
       walkTime = 0;
-      unoRun.opacity = atEnd && onGround ? 0 : 1;
-      unoSit.opacity = atEnd && onGround ? 1 : 0;
+      bobOffset = 0;
+
+      if (!onGround) {
+        velY += FEEL.gravity * dt;
+        feetY += velY * dt;
+        if (feetY >= SIZE.groundY) {
+          feetY = SIZE.groundY;
+          velY = 0;
+          onGround = true;
+        }
+      }
+
+      showPose(onGround ? "sit" : "jump");
+      placeUno();
       return;
     }
 
@@ -624,22 +623,21 @@ function buildScene(k, setCam) {
       }
     }
 
-    const bob = (onGround && dir !== 0)
+    bobOffset = (onGround && dir !== 0)
       ? Math.abs(Math.sin(walkTime * FEEL.bobSpeed)) * FEEL.bobHeight
       : 0;
 
-    // He sits once he has arrived and stopped moving
-    const sitting = atEnd && onGround && dir === 0;
-    unoRun.opacity = sitting ? 0 : 1;
-    unoSit.opacity = sitting ? 1 : 0;
+    // Mid-air he uses the leaping pose. Standing still at a marker or at the
+    // end of the walk, he sits down. Otherwise he is running.
+    if (!onGround) {
+      showPose("jump");
+    } else if (dir === 0 && (currentStop || atEnd)) {
+      showPose("sit");
+    } else {
+      showPose("run");
+    }
 
-    unoRun.pos.x = posX;
-    unoRun.pos.y = feetY - bob;
-    unoRun.flipX = facing === -1;
-
-    unoSit.pos.x = posX;
-    unoSit.pos.y = feetY;
-    unoSit.flipX = facing === -1;
+    placeUno();
 
     // Camera eases toward Uno and stops at the level edges
     const half = SIZE.viewW / 2;
@@ -647,19 +645,15 @@ function buildScene(k, setCam) {
     camX += (targetX - camX) * FEEL.cameraEase;
     setCam(k.vec2(camX, SIZE.viewH / 2));
 
-    // Parallax: the further away a layer is, the less it shifts
-    const drift = (camX - half);
-    far.pos.x = drift * (1 - FEEL.parallaxFar) - SIZE.viewW;
-    mid.pos.x = drift * (1 - FEEL.parallaxMid) - SIZE.viewW;
-
-    // The sky drifts slowest of all, and wraps so it never runs out
-    const skyShift = drift * (1 - FEEL.parallaxSky);
-    for (let i = 0; i < skyTiles.length; i++) {
-      const base = skyShift + i * SKY_TILE_W;
-      const span = SKY_TILE_W * skyTiles.length;
-      // keep each tile within one span of the camera
-      let x = base - Math.floor((base - (camX - half - SKY_TILE_W)) / span) * span;
-      skyTiles[i].pos.x = x;
+    // Parallax: the backdrop drifts slower than the ground, so the city
+    // feels further away. Tiles wrap around the camera so it never runs out.
+    const drift = camX - half;
+    const bgShift = drift * (1 - FEEL.parallaxBg);
+    const span = BG_TILE_W * bgTiles.length;
+    const leftEdge = camX - half - BG_TILE_W;
+    for (let i = 0; i < bgTiles.length; i++) {
+      const base = bgShift + i * BG_TILE_W;
+      bgTiles[i].pos.x = base - Math.floor((base - leftEdge) / span) * span;
     }
   });
 
@@ -670,6 +664,7 @@ function buildScene(k, setCam) {
 
   // Add ?debug to the URL to read the walk position from the browser console.
   if (new URLSearchParams(location.search).has("debug")) {
+    window.pose = () => unoJump.opacity ? "jump" : unoSit.opacity ? "sit" : "run";
     window.unoX = () => Math.round(posX);
     window.camX = () => Math.round(camX);
     window.unoY = () => Math.round(feetY);
