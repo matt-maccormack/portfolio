@@ -114,25 +114,44 @@
     const gameScreen = document.getElementById("game");
 
     // The game needs a keyboard and room to see the street, so small screens
-    // get a short note and the portfolio instead. Checked once on load rather
-    // than live, so nothing changes underneath someone mid-play.
-    const isSmallScreen = window.matchMedia("(max-width: 820px)").matches;
+    // get a short note and the portfolio instead.
+    const smallScreen = window.matchMedia("(max-width: 820px)");
+    let playing = false;
 
-    if (isSmallScreen) {
-      playButton.hidden = true;
-      smallScreenNote.hidden = false;
+    function applyScreenSize() {
+      // Once the game is running, never rearrange the page underneath the
+      // player — resizing mid-walk should not change anything.
+      if (playing) return;
+
+      const small = smallScreen.matches;
+      playButton.hidden = small;
+      smallScreenNote.hidden = !small;
+
       // With no game to play, the portfolio becomes the main action
-      portfolioButton.classList.remove("btn--secondary");
-      portfolioButton.classList.add("btn--primary");
-      portfolioButton.textContent = "View the portfolio →";
-    } else {
-      playButton.addEventListener("click", () => {
-        titleScreen.hidden = true;
-        gameScreen.hidden = false;
-        document.body.classList.add("is-playing");
-        startGame();
-      }, { once: true });   // the game only ever starts once per page load
+      portfolioButton.classList.toggle("btn--primary", small);
+      portfolioButton.classList.toggle("btn--secondary", !small);
+      portfolioButton.innerHTML = small
+        ? 'View the portfolio <span aria-hidden="true">→</span>'
+        : 'Just show me the portfolio <span aria-hidden="true">→</span>';
     }
+
+    applyScreenSize();
+
+    // Re-check when the window is resized or a phone is rotated. Without this,
+    // opening the page in a narrow window and then maximising leaves you
+    // looking at "the game needs a bigger screen" on a screen that is now big.
+    // Both listeners, because not every browser reliably fires the first one.
+    smallScreen.addEventListener("change", applyScreenSize);
+    window.addEventListener("resize", applyScreenSize);
+
+    playButton.addEventListener("click", () => {
+      if (playing || smallScreen.matches) return;
+      playing = true;
+      titleScreen.hidden = true;
+      gameScreen.hidden = false;
+      document.body.classList.add("is-playing");
+      startGame();
+    });
   </script>
 
 </body>
