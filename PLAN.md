@@ -133,7 +133,7 @@ Three stops, in this order. Each modal opens its link in a **new tab**.
 
 **Stop 2 — Customer Storytelling**
 
-> **CUSTOMER STORYTELLING** I turn real customer experiences into credible proof of product value. **View customer story →** Link: [https://www.youtube.com/watch?v=RrlLZU-h32s](https://www.youtube.com/watch?v=RrlLZU-h32s)
+> **CUSTOMER STORYTELLING** I turn real customer experiences into credible proof of product value. **View customer story →** Link: [https://blog.logrocket.com/meilisearch-logrocket-mcp/](https://blog.logrocket.com/meilisearch-logrocket-mcp/)
 
 **Stop 3 — Thought Leadership**
 
@@ -182,7 +182,7 @@ Sections, in order:
    - Headline: Customer Storytelling  
    - Blurb: I turn real customer experiences into credible proof of product value.  
    - Links (all open in new tab)  
-     - LogRocket: [How Meilisearch uses LogRocket’s MCP to improve free trial experience and feature adoption](https://www.youtube.com/watch?v=RrlLZU-h32s)  
+     - LogRocket: [How Meilisearch uses LogRocket’s MCP to improve free trial experience and feature adoption](https://blog.logrocket.com/meilisearch-logrocket-mcp/)  
        - Telling the story of how an innovative customer is using LogRocket’s MCP to build tools and dashboards. Identified a customer by surveying internal product usage data, interviewed her, and edited/recorded the video in Riverside and Descript.  
      - Fidelity Private Shares: [Rugged Robotics](https://www.fidelityprivateshares.com/resources/case-studies/rugged-robotics)  
        - Interviewed Rugged Robotics Founder Derrick Morse before writing this case study on behalf of fintech client Shoobx (now Fidelity Private Shares).
@@ -250,6 +250,14 @@ If real art isn't ready when we reach Phase H, that's fine — the placeholder v
 ## 11. Amendments
 
 Changes made to this plan after the build started. Newest first.
+
+**15 Oct 2026 — Meilisearch piece re-pointed at the blog post.**
+The customer story was republished at
+https://blog.logrocket.com/meilisearch-logrocket-mcp/ with a new video.
+Both the portfolio row and game stop 2 previously linked to the old YouTube
+upload (still live, not broken). They now point at the blog post, which
+embeds the new video, so one link gives both the written case study and the
+recording.
 
 **18 Aug 2026 — Stops auto-open, and the ending screen repeats the work.**
 Phase E originally required the visitor to press interact at each stop. Changed

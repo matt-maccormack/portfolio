@@ -98,7 +98,7 @@ const STOPS = [
     heading: "CUSTOMER STORYTELLING",
     copy: "I turn real customer experiences into credible proof of product value.",
     linkText: "View customer story →",
-    url: "https://www.youtube.com/watch?v=RrlLZU-h32s",
+    url: "https://blog.logrocket.com/meilisearch-logrocket-mcp/",
   },
   {
     x: 3500,
